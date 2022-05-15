@@ -48,6 +48,7 @@ class _MainWidgetState extends State<MainWidget> {
   Future<WeatherData>? weatherData;
   List<String>? lastSavedData;
   bool locEnabled = false;
+  String? cityName;
 
   @override
   void initState() {
@@ -56,6 +57,7 @@ class _MainWidgetState extends State<MainWidget> {
     lastSavedData = Prefs.userPrefs?.getStringList("City") ??
         ["Valmiera", "57.541", "25.4275"];
     if (lastSavedData != null) {
+      cityName = Prefs.userPrefs?.getStringList("City")?[0] ?? 'Valmiera';
       if (locEnabled) {
         //get user location
         requestCurrentLocWeather();
@@ -74,6 +76,8 @@ class _MainWidgetState extends State<MainWidget> {
       String lng = uPos.longitude.toStringAsFixed(4);
       Prefs.userPrefs?.setStringList("City", [name, lat, lng]);
       setState(() {
+        lastSavedData = [name, lat, lng];
+        cityName = name;
         weatherData = Api.client.fetchWeather(lat, lng);
       });
     } catch (e) {
@@ -84,6 +88,7 @@ class _MainWidgetState extends State<MainWidget> {
 
   void requestCurrentWeather() {
     setState(() {
+      cityName = lastSavedData![0];
       weatherData =
           Api.client.fetchWeather(lastSavedData![1], lastSavedData![2]);
     });
@@ -97,10 +102,12 @@ class _MainWidgetState extends State<MainWidget> {
   void toggleLocation() async {
     setState(() {
       if (locEnabled) {
+        print("I am toggled on");
         updateLocButton(false);
       } else {
+        print("I am toggled off");
         updateLocButton(true);
-        requestCurrentLocWeather();
+        //requestCurrentLocWeather();
       }
     });
   }
@@ -108,6 +115,7 @@ class _MainWidgetState extends State<MainWidget> {
   Future<void> onRefresh() async {
     setState(() {
       if (locEnabled) {
+        print("I am enabled!");
         requestCurrentLocWeather();
       } else {
         requestCurrentWeather();
@@ -158,15 +166,16 @@ class _MainWidgetState extends State<MainWidget> {
         ],
       ),
       body: WeatherWidget(
-        weatherData: weatherData,
+        weatherData: weatherData,cityName: cityName,
       ),
     );
   }
 }
 
 class WeatherWidget extends StatefulWidget {
-  const WeatherWidget({this.weatherData, Key? key}) : super(key: key);
+  const WeatherWidget({this.weatherData,this.cityName, Key? key}) : super(key: key);
   final Future<WeatherData>? weatherData;
+  final String? cityName;
   @override
   State<WeatherWidget> createState() => _WeatherWidgetState();
 }
@@ -176,7 +185,6 @@ class _WeatherWidgetState extends State<WeatherWidget> {
   @override
   void initState() {
     super.initState();
-    cityName = Prefs.userPrefs?.getStringList("City")?[0] ?? 'Valmiera';
   }
 
   void onPressed() {
@@ -210,7 +218,7 @@ class _WeatherWidgetState extends State<WeatherWidget> {
                           ),
                         ),
                         Text(
-                          "$cityName",
+                          "${widget.cityName}",
                           style: TextStyle(fontSize: 18),
                         ),
                         Text(
