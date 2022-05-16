@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'dart:async';
 import 'package:dio/dio.dart';
+import 'package:provider/provider.dart';
 import 'package:weather_app/prefs.dart';
 import 'package:weather_app/second_screen.dart';
+import 'package:weather_app/settings_screen.dart';
+import 'package:weather_app/theme_notifier.dart';
 import 'package:weather_app/weekly_screen.dart';
 import 'weather_data.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -13,7 +16,12 @@ import 'package:weather_app/Api.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Prefs.init();
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => ThemeNotifier(),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatefulWidget {
@@ -23,16 +31,29 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  bool isThemeChanged = false;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: "My weather app",
-      home: MainWidget(),
-      theme: ThemeData(
-        //TODO: make this app wide
-        fontFamily: 'LibreBodoni',
-        brightness: Brightness.dark,
-      ),
+    return Consumer<ThemeNotifier>(
+      builder: (context, value, child) {
+        return MaterialApp(
+          title: "My weather app",
+          home: child,
+          theme: ThemeData(
+            //TODO: make this app wide
+            fontFamily: 'LibreBodoni',
+            brightness: value.themeChange ? Brightness.light : Brightness.dark,
+          ),
+        );
+      },
+      child: MainWidget(),
     );
   }
 }
@@ -139,6 +160,22 @@ class _MainWidgetState extends State<MainWidget> {
     });
   }
 
+  void onPressed() {
+    Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const WeeklyScreen(),
+        ));
+  }
+
+  void onSettingsPressed() {
+    Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const SettingsWidget(),
+        ));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -166,50 +203,86 @@ class _MainWidgetState extends State<MainWidget> {
         ],
       ),
       body: WeatherWidget(
-        weatherData: weatherData,cityName: cityName,
+        weatherData: weatherData,
+        cityName: cityName,
+      ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            const DrawerHeader(
+              child: Text("I am a drawer"),
+            ),
+            ListTile(
+              title: const Text("Weekly forecast"),
+              onTap: onPressed,
+              leading: const Icon(Icons.cloud),
+            ),
+            ListTile(
+              title: const Text("Settings"),
+              onTap: () {
+                print("Go to settings");
+                onSettingsPressed();
+              },
+              leading: const Icon(Icons.settings),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
 class WeatherWidget extends StatefulWidget {
-  const WeatherWidget({this.weatherData,this.cityName, Key? key}) : super(key: key);
+  const WeatherWidget({this.weatherData, this.cityName, Key? key})
+      : super(key: key);
   final Future<WeatherData>? weatherData;
   final String? cityName;
   @override
   State<WeatherWidget> createState() => _WeatherWidgetState();
 }
 
-class _WeatherWidgetState extends State<WeatherWidget> {
+class _WeatherWidgetState extends State<WeatherWidget>
+    with SingleTickerProviderStateMixin {
   String? cityName;
+
+  late AnimationController _controller;
+  late Animation<Offset> _offsetAnimation;
+
   @override
   void initState() {
     super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 5),
+    )..repeat(reverse: true);
+    _offsetAnimation = Tween<Offset>(
+            begin: const Offset(-0.05, 0.0), end: const Offset(0.05, 0.0))
+        .animate(CurvedAnimation(parent: _controller, curve: Curves.linear));
   }
 
-  void onPressed() {
-    Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const WeeklyScreen(),
-        ));
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: FutureBuilder<WeatherData>(
-          future: widget.weatherData,
-          builder: (context, snapshot) {
-            if (snapshot.hasData) {
-              return Column(
-                children: <Widget>[
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Column(
-                      children: <Widget>[
-                        SizedBox(
+    return Center(
+      child: FutureBuilder<WeatherData>(
+        future: widget.weatherData,
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            return Column(
+              children: <Widget>[
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Column(
+                    children: <Widget>[
+                      SlideTransition(
+                        position: _offsetAnimation,
+                        child: SizedBox(
                           height: 150,
                           width: double.infinity,
                           child: Image.network(
@@ -217,43 +290,35 @@ class _WeatherWidgetState extends State<WeatherWidget> {
                             fit: BoxFit.fitHeight,
                           ),
                         ),
-                        Text(
-                          "${widget.cityName}",
-                          style: TextStyle(fontSize: 18),
-                        ),
-                        Text(
-                          "${snapshot.data?.current?.weather?.first.description}",
-                          style: TextStyle(fontSize: 32),
-                        ),
-                        Text(
-                          "Temperature (C): ${snapshot.data?.current?.temp}",
-                          style: TextStyle(fontSize: 18),
-                        ),
-                        Text(
-                          "Feels like (C): ${snapshot.data?.current?.feelsLike}",
-                          style: TextStyle(fontSize: 18),
-                        ),
-                        ElevatedButton(
-                          onPressed: onPressed,
-                          child: const Text("Check weekly forecast!"),
-                          style: ButtonStyle(
-                            backgroundColor:
-                                MaterialStateProperty.all(Colors.blueGrey),
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                      Text(
+                        "${widget.cityName}",
+                        style: TextStyle(fontSize: 18),
+                      ),
+                      Text(
+                        "${snapshot.data?.current?.weather?.first.description}",
+                        style: TextStyle(fontSize: 32),
+                      ),
+                      Text(
+                        "Temperature (C): ${snapshot.data?.current?.temp}",
+                        style: TextStyle(fontSize: 18),
+                      ),
+                      Text(
+                        "Feels like (C): ${snapshot.data?.current?.feelsLike}",
+                        style: TextStyle(fontSize: 18),
+                      ),
+                    ],
                   ),
-                ],
-                mainAxisAlignment: MainAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-              );
-            } else if (snapshot.hasError) {
-              return Text("${snapshot.error}");
-            }
-            return const CircularProgressIndicator();
-          },
-        ),
+                ),
+              ],
+              mainAxisAlignment: MainAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+            );
+          } else if (snapshot.hasError) {
+            return Text("${snapshot.error}");
+          }
+          return const CircularProgressIndicator();
+        },
       ),
     );
   }
