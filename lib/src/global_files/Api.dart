@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
-import 'city_data.dart';
-import 'weather_data.dart';
-import 'weekly_data.dart';
+import '../data_class/city_data.dart';
+import '../data_class/weather_data.dart';
+import '../data_class/weekly_data.dart';
 
 class Api {
   Api._();

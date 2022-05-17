@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
-import 'dart:convert';
 import 'dart:async';
-import 'package:dio/dio.dart';
-import 'package:weather_app/city_data.dart';
-import 'package:weather_app/main.dart';
-import 'package:weather_app/Api.dart';
-import 'package:weather_app/prefs.dart';
+import 'package:weather_app/src/data_class/city_data.dart';
+import 'package:weather_app/src/global_files/Api.dart';
+import 'package:weather_app/src/global_files/prefs.dart';
 
 //when changed typings, make a search list which will show finds
 

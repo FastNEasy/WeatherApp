@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
-import 'dart:convert';
 import 'dart:async';
-import 'package:dio/dio.dart';
-import 'package:weather_app/second_screen.dart';
-import 'package:weather_app/weekly_data.dart';
-import 'weather_data.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:weather_app/src/global_files/Api.dart';
+import 'package:weather_app/src/global_files/prefs.dart';
+import 'package:weather_app/src/data_class/weekly_data.dart';
 
 class WeeklyScreen extends StatefulWidget {
   const WeeklyScreen({Key? key}) : super(key: key);
@@ -16,10 +13,22 @@ class WeeklyScreen extends StatefulWidget {
 
 class _WeeklyScreenState extends State<WeeklyScreen> {
   Future<WeeklyData>? weekData;
+  List<String>? lastSavedData;
   @override
   void initState() {
     super.initState();
-    weekData = fetchWeekly();
+    lastSavedData = Prefs.userPrefs?.getStringList("City") ??
+        ["Valmiera", "57.541", "25.4275"];
+    if (lastSavedData != null) {
+      //print("${lastSavedData![1]}, ${lastSavedData![0]}");
+      weekData = Api.client.fetchWeekly(lastSavedData![1], lastSavedData![2]);
+    }
+  }
+
+  String timeStampToDate(int? timeStamp) {
+    DateTime date = DateTime.fromMillisecondsSinceEpoch(timeStamp! * 1000);
+    String dateStr = "${date.day}.${date.month}.${date.year}";
+    return dateStr;
   }
 
   @override
@@ -71,33 +80,4 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
       ),
     );
   }
-
-  String timeStampToDate(int? timeStamp) {
-    DateTime date = DateTime.fromMillisecondsSinceEpoch(timeStamp! * 1000);
-    String dateStr = "${date.day}.${date.month}.${date.year}";
-    return dateStr;
-  }
 }
-
-Future<WeeklyData> fetchWeekly() async {
-  //print("Future things $coordinates");
-  final prefs = await SharedPreferences.getInstance();
-  final List<String>? items =
-      prefs.getStringList("City") ?? ["Valmiera", "57.541", "25.4275"];
-  print(items);
-  Map<String, dynamic> qData = {
-    'lat': items?[1],
-    'lon': items?[2],
-    'exclude': "minutely,hourly,current"
-  };
-  final response = await api.get('/2.5/onecall', queryParameters: qData);
-  return WeeklyData.fromJson(response.data);
-}
-
-Dio api = Dio(BaseOptions(
-    baseUrl: "https://api.openweathermap.org/data",
-    queryParameters: {
-      "appid": "493c32b6d579efb49f3d9ead947c9dbb",
-      "units": "metric",
-    }));
-//new file and self init.
