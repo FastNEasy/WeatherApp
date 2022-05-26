@@ -35,7 +35,7 @@ class FavoriteProvider with ChangeNotifier {
 
   Future<void> init() async {
     var dbPath = join(await getDatabasesPath(), "favorite_database.db");
-    open(dbPath);
+    await open(dbPath);
   }
 
   Future open(String path) async {
@@ -54,16 +54,17 @@ class FavoriteProvider with ChangeNotifier {
   Future<void> insertFavorite(Favorite fav) async {
     fav.id = await db?.insert("favorites", fav.toMap());
     favList?.add(fav);
+    print("Added favorite $fav with id ${fav.id}");
     notifyListeners();
   }
 
   Future<int?> delete(int id) async {
-    return await db?.delete("favorite", where: 'id = ?', whereArgs: [id]);
+    return await db?.delete("favorites", where: 'id = ?', whereArgs: [id]);
   }
 
   Future<void> getFavorite({bool notify = true}) async {
     List<Map>? maps = await db?.query(
-      "favorite",
+      "favorites",
       columns: ["id", "city", "lat", "lon"],
       // where: 'id = ?',
       //  whereArgs: [id]

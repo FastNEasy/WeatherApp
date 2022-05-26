@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:weather_app/src/city_search/second_screen.dart';
 import 'package:weather_app/src/favorites/fav_provider.dart';
+import 'package:weather_app/src/lang_translations/localisation_delegate.dart';
 import 'package:weather_app/src/settings/settings_screen.dart';
 import 'package:weather_app/src/weekly_weather/weekly_screen.dart';
 
@@ -35,7 +36,10 @@ class _WeatherDrawerState extends State<WeatherDrawer> {
     }
   }
 
-  void removeFavorite() {}
+  void removeFavorite(int id) {
+    context.read<FavoriteProvider>().delete(id);
+  }
+
   void onSettingsPressed() {
     Navigator.push(
         context,
@@ -55,7 +59,7 @@ class _WeatherDrawerState extends State<WeatherDrawer> {
             margin: EdgeInsets.zero,
           ),
           ListTile(
-            title: const Text("Favorites"),
+            title: Text(DemoLocalizations.of(context).drawerFavorites),
             leading: const Icon(Icons.star),
             trailing: IconButton(
               icon: const Icon(Icons.add),
@@ -67,42 +71,34 @@ class _WeatherDrawerState extends State<WeatherDrawer> {
           Divider(height: 0),
           Column(
             children: [
-              // FutureBuilder<List<Favorite>?>(
-              //   future: items,
-              //   builder: (context, snapshot) {
-              //     if (snapshot.hasData) {
-              //       return ListView.builder(
-              //         itemCount: snapshot.data?.length,
-              //         itemBuilder: (context, index) {
-              //           return ListTile(
-              //             contentPadding:
-              //                 EdgeInsets.only(left: 71.5, right: 16),
-              //             title: Text(
-              //                 snapshot.data?[index].city ?? "something wrong"),
-              //             //leading: Icon(Icons.location_on),
-              //             trailing: IconButton(
-              //               icon: const Icon(Icons.remove),
-              //               onPressed: removeFavorite,
-              //             ),
-              //           );
-              //         },
-              //       );
-              //     } else if (snapshot.hasError) {
-              //       return Text("${snapshot.error}");
-              //     }
-              //     return const Text("Something went wrong");
-              //   },
-              // ),
+              SizedBox(
+                child: Consumer<FavoriteProvider>(
+                  builder: ((context, value, child) {
+                    if (value.favList!.isNotEmpty) {
+                      return ListTile(
+                        title: Text("${value.favList?.first.city}"),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.remove),
+                          onPressed: () {
+                            removeFavorite(value.favList?.first.id ?? 0);
+                          },
+                        ),
+                      );
+                    }
+                    return const Text("Nothing selected");
+                  }),
+                ),
+              ),
             ],
           ),
           Divider(height: 0),
           ListTile(
-            title: const Text("Weekly forecast"),
+            title: Text(DemoLocalizations.of(context).drawerWeekly),
             onTap: onPressed,
             leading: const Icon(Icons.cloud),
           ),
           ListTile(
-            title: const Text("Settings"),
+            title: Text(DemoLocalizations.of(context).drawerSettings),
             onTap: () {
               print("Go to settings");
               onSettingsPressed();

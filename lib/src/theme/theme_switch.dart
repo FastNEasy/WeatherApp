@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:weather_app/src/global_files/prefs.dart';
+import 'package:weather_app/src/lang_translations/localisation_delegate.dart';
 import 'package:weather_app/src/theme/theme_notifier.dart';
 
 class ThemeSwitch extends StatefulWidget {
@@ -28,7 +29,7 @@ class _ThemeSwitchState extends State<ThemeSwitch> {
   @override
   Widget build(BuildContext context) {
     return SwitchListTile(
-        title: const Text("Dark/Light theme"),
+        title: Text(DemoLocalizations.of(context).titleTheme),
         value: themeChanged,
         onChanged: (value) {
           setState(() {
