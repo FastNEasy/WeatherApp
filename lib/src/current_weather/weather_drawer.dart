@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:weather_app/src/city_search/second_screen.dart';
 import 'package:weather_app/src/favorites/fav_provider.dart';
 import 'package:weather_app/src/lang_translations/localisation_delegate.dart';
+import 'package:weather_app/src/nfc_reader/nfc_page.dart';
 import 'package:weather_app/src/settings/settings_screen.dart';
 import 'package:weather_app/src/weekly_weather/weekly_screen.dart';
 
@@ -45,6 +46,14 @@ class _WeatherDrawerState extends State<WeatherDrawer> {
         context,
         MaterialPageRoute(
           builder: (context) => const SettingsWidget(),
+        ));
+  }
+
+  void onReaderPressed() {
+    Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const NFCWidget(),
         ));
   }
 
@@ -104,6 +113,11 @@ class _WeatherDrawerState extends State<WeatherDrawer> {
               onSettingsPressed();
             },
             leading: const Icon(Icons.settings),
+          ),
+          ListTile(
+            title: const Text("NFC reading"),
+            onTap: onReaderPressed,
+            leading: const Icon(Icons.accessible_forward),
           ),
         ],
       ),
